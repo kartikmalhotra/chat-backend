@@ -1,0 +1,68 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ChatType {
+  DIRECT
+  GROUP
+}
+
+enum ChatMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  username    String   @unique @db.VarChar(64)
+  displayName String   @map("display_name") @db.VarChar(128)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  memberships  ChatMember[]
+  createdChats Chat[]       @relation("ChatCreator")
+
+  @@map("users")
+}
+
+model Chat {
+  id   String   @id @default(uuid()) @db.Uuid
+  type ChatType
+
+  name String? @db.VarChar(128)
+
+  directKey String? @unique @map("direct_key") @db.VarChar(73)
+
+  createdById String? @map("created_by_id") @db.Uuid
+  createdBy   User?   @relation("ChatCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members ChatMember[]
+
+  @@index([type])
+  @@map("chats")
+}
+
+model ChatMember {
+  id       String         @id @default(uuid()) @db.Uuid
+  chatId   String         @map("chat_id") @db.Uuid
+  userId   String         @map("user_id") @db.Uuid
+  role     ChatMemberRole @default(MEMBER)
+  joinedAt DateTime       @default(now()) @map("joined_at")
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([userId])
+  @@map("chat_members")
+}

@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+src/generated
+.git
+.env
+.env.*
+!.env.example
+*.log
+.firebase
+README.md
+tests
